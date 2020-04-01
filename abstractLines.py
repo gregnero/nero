@@ -3,7 +3,7 @@ import color
 import cv2
 import matplotlib.pyplot as plt
 
-def abstractLines(path, reach, line_color, bkrd_color, lines):
+def abstractLines(path, reach, line_color, bkrd_color, canny_kernal_size, lines):
 
     """ Draws some lines, or something like that. 
 
@@ -15,6 +15,9 @@ def abstractLines(path, reach, line_color, bkrd_color, lines):
                           If 'color' is requested, lines will be draw by choosing and looping 
                           through the top three colors in the image's color palette.
         bkrd_color (str): {'white', 'black'} What color the background should be.
+        canny_kernal_size (int): square kernal size for canny edge detection. 50 is recommended value.
+                                 The higher the number the stricter the lines will be.
+                                 For more "line points" make the number lower.
         lines (int): The number of lines that should be drawn.
             
     Returns:
@@ -78,8 +81,8 @@ def abstractLines(path, reach, line_color, bkrd_color, lines):
         return -1
 
     #get a binary pointmap for the image
-    pointmap = cv2.Canny(src, 50,50)
-    pointmap = pointmap / np.max(pointmap)
+    pointmap = cv2.Canny(src, canny_kernal_size, canny_kernal_size) #returns points either 0 or 255
+    pointmap = pointmap / np.max(pointmap) #makes points either 0 or 1
 
     #pick an origin to start on
     origin = []
@@ -87,7 +90,7 @@ def abstractLines(path, reach, line_color, bkrd_color, lines):
 
         r_rand = np.random.randint(0, rows)
         c_rand = np.random.randint(0, cols)
-        my_origin = [r_rand, c_rand]
+        my_origin = (r_rand, c_rand)
 
         my_chosen_point = pointmap[r_rand, c_rand]
 
@@ -98,4 +101,71 @@ def abstractLines(path, reach, line_color, bkrd_color, lines):
         else:
 
             continue
+
+    #begin the lines loop
+    for l in range(0, lines):
+
+        #get the source for this line
+        if (l == 0):
+
+            source_of_line = origin[0]
+
+        else:
+
+            source_of_line = last_endpoint
+
+        #establish endpoint storage for this line
+        jump_to_this_endpoint = []
+
+        #restrict reach of endpoint in a square region around the source
+        search_block_left_column_index = int(source_of_line[1] - (reach/2))
+        search_block_right_column_index = int(source_of_line[1] + (reach/2))
+        search_block_upper_row_index = int(source_of_line[0] - (reach/2))
+        search_block_lower_row_index = int(source_of_line[1] + (reach/2))
+
+        #catch any core dump errors that have the potential to occur
+        if (search_block_left_column_index < 0):
+
+            search_block_left_column_index = 0
+        
+        if (search_block_right_column_index >= cols):
+
+            search_block_right_column_index = int(cols - 1)
+
+        if (search_block_upper_row_index < 0):
+
+            search_block_upper_row_index = 0
+
+        if (search_block_lower_row_index >= rows):
+
+            search_block_lower_row_index = int(rows-1)
+
+        #while we haven't found an endpoint, look for one
+        while (len(jump_to_this_endpoint) == 0):
+            
+            #get random coord in the search block region
+            random_row_coordinate = np.random.randint(search_block_upper_row_index, search_block_lower_row_index)
+            random_col_coordinate = np.random.randint(search_block_left_column_index, search_block_right_column_index)
+            
+            #create random coord tuple
+            my_random_endpoint_coordinate = (random_row_coordinate, random_col_coordinate)
+
+            #get the value of that point at that random coord (should be 0 or 1)
+            pointmap_value = pointmap[random_row_coordinate, random_col_coordinate]
+
+            #if it is 1, choose it
+            if (pointmap_value == 1):
+
+                jump_to_this_endpoint.append(my_random_endpoint_coordinate)
+
+            #else, look for another point that is equal to 1
+            else:
+
+                continue
+
+        #store that endpoint for the next line's source
+        last_endpoint = jump_to_this_endpoint[0]
+
+
+
 
