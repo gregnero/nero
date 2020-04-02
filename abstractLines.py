@@ -48,6 +48,9 @@ def abstractLines(path, reach, line_color, bkrd_color, canny_kernal_size, lines)
         print("BACKGROUND COLOR REQUESTED:", bkrd_color)
         return -1
 
+    #instantiate return object and append blank canvas
+    frames = []
+    
     #choose the line color(s) that will be drawn with
     if (line_color == 'white'):
 
@@ -87,7 +90,7 @@ def abstractLines(path, reach, line_color, bkrd_color, canny_kernal_size, lines)
     #pick an origin to start on
     origin = []
     while (len(origin) == 0):
-
+        
         r_rand = np.random.randint(0, rows)
         c_rand = np.random.randint(0, cols)
         my_origin = (r_rand, c_rand)
@@ -104,15 +107,15 @@ def abstractLines(path, reach, line_color, bkrd_color, canny_kernal_size, lines)
 
     #begin the lines loop
     for l in range(0, lines):
-
-        #get the source for this line
+        
+        #choose source for this line
         if (l == 0):
 
             source_of_line = origin[0]
 
         else:
 
-            source_of_line = last_endpoint
+            source_of_line = previous_endpoint
 
         #establish endpoint storage for this line
         jump_to_this_endpoint = []
@@ -121,7 +124,7 @@ def abstractLines(path, reach, line_color, bkrd_color, canny_kernal_size, lines)
         search_block_left_column_index = int(source_of_line[1] - (reach/2))
         search_block_right_column_index = int(source_of_line[1] + (reach/2))
         search_block_upper_row_index = int(source_of_line[0] - (reach/2))
-        search_block_lower_row_index = int(source_of_line[1] + (reach/2))
+        search_block_lower_row_index = int(source_of_line[0] + (reach/2))
 
         #catch any core dump errors that have the potential to occur
         if (search_block_left_column_index < 0):
@@ -140,8 +143,17 @@ def abstractLines(path, reach, line_color, bkrd_color, canny_kernal_size, lines)
 
             search_block_lower_row_index = int(rows-1)
 
+        ticker = 0 #set up for case where an endpoint can't be found
         #while we haven't found an endpoint, look for one
         while (len(jump_to_this_endpoint) == 0):
+
+            ticker = ticker + 1
+
+            #if we search for time == size of the image, call it quits
+            if (ticker == (rows*cols)):
+
+                print("ERROR: ENDPOINT SEARCH FAILED. TRY INCREASING REACH.")
+                return -1
             
             #get random coord in the search block region
             random_row_coordinate = np.random.randint(search_block_upper_row_index, search_block_lower_row_index)
@@ -164,8 +176,12 @@ def abstractLines(path, reach, line_color, bkrd_color, canny_kernal_size, lines)
                 continue
 
         #store that endpoint for the next line's source
-        last_endpoint = jump_to_this_endpoint[0]
+        previous_endpoint = jump_to_this_endpoint[0]
 
+        #put the current state of the canvas into the list
+        frames.append(np.copy(canvas))
 
+        #draw the line and reassign canvas
+        cv2.line(canvas, source_of_line, jump_to_this_endpoint[0], line_colors)
 
-
+    return frames
