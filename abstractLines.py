@@ -2,6 +2,7 @@ import numpy as np
 import color
 import cv2
 import matplotlib.pyplot as plt
+from progressbar import ProgressBar
 
 def abstractLines(path, min_reach, max_reach, line_color, max_number_of_line_colors, max_line_thickness, bkrd_color, canny_kernal_size, lines, view_pointmap):
 
@@ -135,9 +136,11 @@ def abstractLines(path, min_reach, max_reach, line_color, max_number_of_line_col
     #set up counter for color looping
     color_counter = 0
 
+    #set up pbar
+    pbar = ProgressBar()
+
     #begin the lines loop
-    for l in range(0, lines):
-        
+    for l in pbar(range(0, lines)):
 
         #reset triplet counter when it reaches limit
         if (color_counter == max_number_of_line_colors):

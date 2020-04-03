@@ -9,6 +9,7 @@ This is setup to be a Python module.  Clone this repository in your PYTHONPATH d
 * matplotlib.pyplot
 * cv2
 * color
+* progressbar
 
 # CONTACT INFO #
 Gregory Nero - gmn8357@rit.edu
