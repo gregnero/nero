@@ -73,7 +73,7 @@ def abstractLines(path, min_reach, max_reach, line_color, line_thickness, bkrd_c
     #choose the line color(s) that will be drawn with
     if (line_color == 'white'):
 
-        line_colors = (255,255,255)
+        line_colors = (1, 1, 1)
 
     elif (line_color == 'black'):
 
