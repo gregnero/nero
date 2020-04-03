@@ -3,7 +3,7 @@ import color
 import cv2
 import matplotlib.pyplot as plt
 
-def abstractLines(path, min_reach, max_reach, line_color, line_thickness, bkrd_color, canny_kernal_size, lines, view_pointmap):
+def abstractLines(path, min_reach, max_reach, line_color, max_number_of_line_colors, line_thickness, bkrd_color, canny_kernal_size, lines, view_pointmap):
 
     """ Draws some lines, or something like that. 
 
@@ -15,6 +15,7 @@ def abstractLines(path, min_reach, max_reach, line_color, line_thickness, bkrd_c
                           For grayscale images, line_color should be 'white' or 'black'.
                           If 'color' is requested, lines will be draw by choosing and looping 
                           through the top three colors in the image's color palette.
+        max_number_of_line_colors (int): The maximum possible number of line colors you want to cycle through.
         line_thickness (int): The thickness of the line in units of pixels
         bkrd_color (str): {'white', 'black'} What color the background should be.
         canny_kernal_size (int): square kernal size for canny edge detection. 50 is recommended value.
@@ -81,17 +82,16 @@ def abstractLines(path, min_reach, max_reach, line_color, line_thickness, bkrd_c
 
     elif (line_color == 'color'):
 
-        max_number_of_colors = 5
         hue_separation = 10
         sq = 0.9
         vq = 0.8
         space = 'bgr'
-        line_colors = color.colorPalette(path, False, max_number_of_colors, hue_separation, sq, vq, space)
+        line_colors = color.colorPalette(path, False, max_number_of_line_colors, hue_separation, sq, vq, space)
 
-        if (len(line_colors) != 5):
+        if (len(line_colors) != max_number_of_line_colors):
 
             print("ERROR: YOU DUMMY, YOU ARE (PROBABLY) REQUESTING LINE COLOR FOR A GRAYSCALE IMAGE!")
-            print("OR, THE COLOR PALETTE HELPER COULDN'T FIND", max_number_of_colors, "COLORS IN YOUR IMAGE!")
+            print("OR, THE COLOR PALETTE HELPER COULDN'T FIND", max_number_of_line_colors, "COLORS IN YOUR IMAGE!")
             print("REGARDLESS, SOMETHING IS FISHY!")
             print("LENGTH OF line_colors:", len(line_colors))
             return -1
@@ -139,7 +139,7 @@ def abstractLines(path, min_reach, max_reach, line_color, line_thickness, bkrd_c
         
 
         #reset triplet counter when it reaches limit
-        if (color_counter == max_number_of_colors):
+        if (color_counter == max_number_of_line_colors):
 
             color_counter = 0
 
