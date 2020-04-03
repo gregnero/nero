@@ -3,13 +3,14 @@ import color
 import cv2
 import matplotlib.pyplot as plt
 
-def abstractLines(path, reach, line_color, line_thickness, bkrd_color, canny_kernal_size, lines, view_pointmap):
+def abstractLines(path, min_reach, max_reach, line_color, line_thickness, bkrd_color, canny_kernal_size, lines, view_pointmap):
 
     """ Draws some lines, or something like that. 
 
     Args:
         path (str): Path to the image.
-        reach (float): The minimum for how far the origin of a line will search for an endpoint in pixel space.
+        min_reach (float): The minimum for how far the origin of a line will search for an endpoint in pixel space.
+        max_reach (float): The maximum for how far the origin of a line will search for an endpoint in pixel space.
         line_color (str): {'white', 'black', 'color'} What color the lines should be.
                           For grayscale images, line_color should be 'white' or 'black'.
                           If 'color' is requested, lines will be draw by choosing and looping 
@@ -52,6 +53,22 @@ def abstractLines(path, reach, line_color, line_thickness, bkrd_color, canny_ker
 
     #instantiate return object and append blank canvas
     frames = []
+
+    #check reach conditions
+    if (min_reach == max_reach):
+
+        print("ERROR: PLEASE MAKE SURE min_reach < max_reach")
+        return -1
+    
+    if (min_reach > max_reach):
+
+        print("ERROR: PLEASE MAKE SURE min_reach < max_reach")
+        return -1
+
+    if (min_reach > rows or min_reach > cols):
+
+        print("PLEASE MAKE SURE min_reach IS LESS THAN THE SIZE OF THE IMAGE IN EITHER DIMENSION")
+        return -1
     
     #choose the line color(s) that will be drawn with
     if (line_color == 'white'):
@@ -138,29 +155,6 @@ def abstractLines(path, reach, line_color, line_thickness, bkrd_color, canny_ker
         #establish endpoint storage for this line
         jump_to_this_endpoint = []
 
-        #restrict reach of endpoint in a square region around the source
-        search_block_left_column_index = int(source_of_line[1] - (reach/2))
-        search_block_right_column_index = int(source_of_line[1] + (reach/2))
-        search_block_upper_row_index = int(source_of_line[0] - (reach/2))
-        search_block_lower_row_index = int(source_of_line[0] + (reach/2))
-
-        #catch any core dump errors that have the potential to occur
-        if (search_block_left_column_index < 0):
-
-            search_block_left_column_index = 0
-        
-        if (search_block_right_column_index >= cols):
-
-            search_block_right_column_index = int(cols - 1)
-
-        if (search_block_upper_row_index < 0):
-
-            search_block_upper_row_index = 0
-
-        if (search_block_lower_row_index >= rows):
-
-            search_block_lower_row_index = int(rows-1)
-
         ticker = 0 #set up for case where an endpoint can't be found
         #while we haven't found an endpoint, look for one
         while (len(jump_to_this_endpoint) == 0):
@@ -174,21 +168,24 @@ def abstractLines(path, reach, line_color, line_thickness, bkrd_color, canny_ker
                 return -1
             
             #get random coord in the search block region
-            random_row_coordinate = np.random.randint(search_block_upper_row_index, search_block_lower_row_index)
-            random_col_coordinate = np.random.randint(search_block_left_column_index, search_block_right_column_index)
-            
+            random_row_coordinate = np.random.randint(0, rows)
+            random_col_coordinate = np.random.randint(0, cols)
+
             #create random coord tuple
             my_random_endpoint_coordinate = (random_row_coordinate, random_col_coordinate)
 
+            #get distance of random point from source of line
+            dist = np.sqrt(np.square(source_of_line[0] - random_row_coordinate) + np.square(source_of_line[1] - random_col_coordinate))
+            
             #get the value of that point at that random coord (should be 0 or 1)
             pointmap_value = pointmap[random_row_coordinate, random_col_coordinate]
 
-            #if it is 1, choose it
-            if (pointmap_value == 1):
+            #if the point is one and fulfills reach requirements
+            if (pointmap_value == 1 and dist >= min_reach and dist <= max_reach):
 
                 jump_to_this_endpoint.append(my_random_endpoint_coordinate)
 
-            #else, look for another point that is equal to 1
+            #else, keep searching
             else:
 
                 continue
