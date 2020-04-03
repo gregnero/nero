@@ -81,17 +81,17 @@ def abstractLines(path, min_reach, max_reach, line_color, line_thickness, bkrd_c
 
     elif (line_color == 'color'):
 
-        max_number_of_colors = 3
+        max_number_of_colors = 5
         hue_separation = 10
-        sq = 0.7
-        vq = 0.6
+        sq = 0.9
+        vq = 0.8
         space = 'bgr'
         line_colors = color.colorPalette(path, False, max_number_of_colors, hue_separation, sq, vq, space)
 
-        if (len(line_colors) != 3):
+        if (len(line_colors) != 5):
 
             print("ERROR: YOU DUMMY, YOU ARE (PROBABLY) REQUESTING LINE COLOR FOR A GRAYSCALE IMAGE!")
-            print("OR, THE COLOR PALETTE HELPER COULDN'T FIND THREE COLORS IN YOUR IMAGE!")
+            print("OR, THE COLOR PALETTE HELPER COULDN'T FIND", max_number_of_colors, "COLORS IN YOUR IMAGE!")
             print("REGARDLESS, SOMETHING IS FISHY!")
             print("LENGTH OF line_colors:", len(line_colors))
             return -1
@@ -132,16 +132,16 @@ def abstractLines(path, min_reach, max_reach, line_color, line_thickness, bkrd_c
             continue
 
     #set up counter for color looping
-    triplet_counter = 0
+    color_counter = 0
 
     #begin the lines loop
     for l in range(0, lines):
         
 
         #reset triplet counter when it reaches limit
-        if (triplet_counter == 3):
+        if (color_counter == max_number_of_colors):
 
-            triplet_counter = 0
+            color_counter = 0
 
         #choose source for this line
         if (l == 0):
@@ -205,13 +205,13 @@ def abstractLines(path, min_reach, max_reach, line_color, line_thickness, bkrd_c
         #if we want to cycle through the colors 
         elif (line_color == 'color'):
 
-            bgr_value = line_colors[triplet_counter]
+            bgr_value = line_colors[color_counter]
 
             #draw the line and reassign canvas
             cv2.line(canvas, source_of_line, jump_to_this_endpoint[0], bgr_value, thickness = line_thickness)
 
         #++ the triplet counter
-        triplet_counter = triplet_counter + 1
+        color_counter = color_counter + 1
 
     
     return frames
