@@ -3,7 +3,7 @@ import color
 import cv2
 import matplotlib.pyplot as plt
 
-def abstractLines(path, min_reach, max_reach, line_color, max_number_of_line_colors, line_thickness, bkrd_color, canny_kernal_size, lines, view_pointmap):
+def abstractLines(path, min_reach, max_reach, line_color, max_number_of_line_colors, max_line_thickness, bkrd_color, canny_kernal_size, lines, view_pointmap):
 
     """ Draws some lines, or something like that. 
 
@@ -16,7 +16,8 @@ def abstractLines(path, min_reach, max_reach, line_color, max_number_of_line_col
                           If 'color' is requested, lines will be draw by choosing and looping 
                           through the top three colors in the image's color palette.
         max_number_of_line_colors (int): The maximum possible number of line colors you want to cycle through.
-        line_thickness (int): The thickness of the line in units of pixels
+        max_line_thickness (int): The maximum thickness of the line in units of pixels. Lines are drawn with random thickness
+                                  between [1, max_line_thickness].
         bkrd_color (str): {'white', 'black'} What color the background should be.
         canny_kernal_size (int): square kernal size for canny edge detection. 50 is recommended value.
                                  The higher the number the stricter the lines will be.
@@ -200,7 +201,7 @@ def abstractLines(path, min_reach, max_reach, line_color, max_number_of_line_col
         if (line_color == 'white' or line_color == 'black'):
 
             #draw the line and reassign canvas
-            cv2.line(canvas, source_of_line, jump_to_this_endpoint[0], line_colors, thickness = line_thickness)
+            cv2.line(canvas, source_of_line, jump_to_this_endpoint[0], line_colors, thickness = np.random.randint(1, max_line_thickness))
 
         #if we want to cycle through the colors 
         elif (line_color == 'color'):
@@ -208,7 +209,7 @@ def abstractLines(path, min_reach, max_reach, line_color, max_number_of_line_col
             bgr_value = line_colors[color_counter]
 
             #draw the line and reassign canvas
-            cv2.line(canvas, source_of_line, jump_to_this_endpoint[0], bgr_value, thickness = line_thickness)
+            cv2.line(canvas, source_of_line, jump_to_this_endpoint[0], bgr_value, thickness = np.random.randint(1, max_line_thickness))
 
         #++ the triplet counter
         color_counter = color_counter + 1
