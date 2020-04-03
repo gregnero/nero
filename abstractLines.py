@@ -3,7 +3,7 @@ import color
 import cv2
 import matplotlib.pyplot as plt
 
-def abstractLines(path, reach, line_color, bkrd_color, canny_kernal_size, lines):
+def abstractLines(path, reach, line_color, line_thickness, bkrd_color, canny_kernal_size, lines, view_pointmap):
 
     """ Draws some lines, or something like that. 
 
@@ -14,11 +14,13 @@ def abstractLines(path, reach, line_color, bkrd_color, canny_kernal_size, lines)
                           For grayscale images, line_color should be 'white' or 'black'.
                           If 'color' is requested, lines will be draw by choosing and looping 
                           through the top three colors in the image's color palette.
+        line_thickness (int): The thickness of the line in units of pixels
         bkrd_color (str): {'white', 'black'} What color the background should be.
         canny_kernal_size (int): square kernal size for canny edge detection. 50 is recommended value.
                                  The higher the number the stricter the lines will be.
                                  For more "line points" make the number lower.
         lines (int): The number of lines that should be drawn.
+        view_pointmap (bool): Option to see the binary pointmap of the image.
             
     Returns:
         frames (list): Collection of all of the frames, one after another. Each frame is a 2D
@@ -36,11 +38,11 @@ def abstractLines(path, reach, line_color, bkrd_color, canny_kernal_size, lines)
     #set up the background canvas that will be drawn on
     if (bkrd_color == 'white'):
 
-        canvas = np.ones((rows,cols)) 
+        canvas = np.ones((rows,cols, 3), np.uint8) 
     
     elif (bkrd_color == 'black'):
 
-        canvas = np.zeros((rows, cols))
+        canvas = np.zeros((rows, cols, 3), np.uint8)
 
     else:
 
@@ -66,7 +68,7 @@ def abstractLines(path, reach, line_color, bkrd_color, canny_kernal_size, lines)
         hue_separation = 10
         sq = 0.7
         vq = 0.6
-        space = 'rgb'
+        space = 'bgr'
         line_colors = color.colorPalette(path, False, max_number_of_colors, hue_separation, sq, vq, space)
 
         if (len(line_colors) != 3):
@@ -87,6 +89,13 @@ def abstractLines(path, reach, line_color, bkrd_color, canny_kernal_size, lines)
     pointmap = cv2.Canny(src, canny_kernal_size, canny_kernal_size) #returns points either 0 or 255
     pointmap = pointmap / np.max(pointmap) #makes points either 0 or 1
 
+    if (view_pointmap == True):
+
+        plt.imshow(pointmap, cmap = 'gray')
+        plt.title("Pointmap")
+        plt.axis("off")
+        plt.show()
+
     #pick an origin to start on
     origin = []
     while (len(origin) == 0):
@@ -105,9 +114,18 @@ def abstractLines(path, reach, line_color, bkrd_color, canny_kernal_size, lines)
 
             continue
 
+    #set up counter for color looping
+    triplet_counter = 0
+
     #begin the lines loop
     for l in range(0, lines):
         
+
+        #reset triplet counter when it reaches limit
+        if (triplet_counter == 3):
+
+            triplet_counter = 0
+
         #choose source for this line
         if (l == 0):
 
@@ -181,7 +199,22 @@ def abstractLines(path, reach, line_color, bkrd_color, canny_kernal_size, lines)
         #put the current state of the canvas into the list
         frames.append(np.copy(canvas))
 
-        #draw the line and reassign canvas
-        cv2.line(canvas, source_of_line, jump_to_this_endpoint[0], line_colors)
+        #if the line is black or white
+        if (line_color == 'white' or line_color == 'black'):
 
+            #draw the line and reassign canvas
+            cv2.line(canvas, source_of_line, jump_to_this_endpoint[0], line_colors, thickness = line_thickness)
+
+        #if we want to cycle through the colors 
+        elif (line_color == 'color'):
+
+            bgr_value = line_colors[triplet_counter]
+
+            #draw the line and reassign canvas
+            cv2.line(canvas, source_of_line, jump_to_this_endpoint[0], bgr_value, thickness = line_thickness)
+
+        #++ the triplet counter
+        triplet_counter = triplet_counter + 1
+
+    
     return frames
