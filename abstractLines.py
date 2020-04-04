@@ -155,6 +155,7 @@ def abstractLines(path, min_reach, max_reach, line_color, max_number_of_line_col
 
             source_of_line = origin[0]
 
+
         else:
 
             source_of_line = previous_endpoint
@@ -165,6 +166,7 @@ def abstractLines(path, min_reach, max_reach, line_color, max_number_of_line_col
         #establish endpoint storage for this line
         jump_to_this_endpoint = []
 
+
         ticker = 0 #set up for case where an endpoint can't be found
         #while we haven't found an endpoint, look for one
         while (len(jump_to_this_endpoint) == 0):
@@ -174,7 +176,7 @@ def abstractLines(path, min_reach, max_reach, line_color, max_number_of_line_col
             #if we search for time == size of the image, call it quits
             if (ticker == (rows*cols)):
 
-                print("ERROR: ENDPOINT SEARCH FAILED. TRY INCREASING REACH.")
+                print("ERROR: ENDPOINT SEARCH FAILED. TRY INCREASING REACH OR DECREASING CANNY KERNAL SIZE.")
                 return -1
             
             #get random coord in the search block region
@@ -184,29 +186,79 @@ def abstractLines(path, min_reach, max_reach, line_color, max_number_of_line_col
             #create random coord tuple
             my_random_endpoint_coordinate = (random_row_coordinate, random_col_coordinate)
 
-            #if we have visited this already, move on
-            if (my_random_endpoint_coordinate in forbidden_points):
+            #create storage for the random line under inspection [source -> endpoint]
+            my_random_line = [source_of_line, my_random_endpoint_coordinate]
 
-                continue
+            #in the case where we don't have a previous line to worry about
+            if (l == 0):
 
-            #get distance of random point from source of line
-            dist = np.sqrt(np.square(source_of_line[0] - random_row_coordinate) + np.square(source_of_line[1] - random_col_coordinate))
-            
-            #get the value of that point at that random coord (should be 0 or 1)
-            pointmap_value = pointmap[random_row_coordinate, random_col_coordinate]
+                #if we have visited this already, move on
+                if (my_random_endpoint_coordinate in forbidden_points):
 
-            #if the point is one and fulfills reach requirements
-            if (pointmap_value == 1 and dist >= min_reach and dist <= max_reach):
+                    continue
 
-                jump_to_this_endpoint.append(my_random_endpoint_coordinate)
+                #get distance of random point from source of line
+                dist = np.sqrt(np.square(source_of_line[0] - random_row_coordinate) + np.square(source_of_line[1] - random_col_coordinate))
+                
+                #get the value of that point at that random coord (should be 0 or 1)
+                pointmap_value = pointmap[random_row_coordinate, random_col_coordinate]
 
-            #else, keep searching
+                #if the point is one and fulfills reach requirements
+                if (pointmap_value == 1 and dist >= min_reach and dist <= max_reach):
+
+                    jump_to_this_endpoint.append(my_random_endpoint_coordinate)
+
+                #else, keep searching
+                else:
+
+                    continue
+
             else:
 
-                continue
+                #get bias
+                my_bias_x = my_previous_line[0][0] - my_previous_line[1][0]
+                my_bias_y = my_previous_line[0][1] - my_previous_line[1][1]
+                my_bias = (my_bias_x, my_bias_y)
+
+                #add bias to each of the random line coordinates to get same origin for dot product
+                my_random_line_biased_source = (my_random_line[0][0] + my_bias[0], my_random_line[0][1] + my_bias[1])
+                my_random_line_biased_endpoint = (my_random_line[1][0] + my_bias[0], my_random_line[1][1] + my_bias[1])
+                my_random_line_biased = (my_random_line_biased_source, my_random_line_biased_endpoint)
+
+                #set up vectors for dot product
+                my_previous_line_vector = np.array([my_previous_line[1][1] - my_previous_line[0][1], my_previous_line[0][0] - my_previous_line[1][0]])
+                my_random_line_biased_vector = np.array([my_random_line_biased[1][1] - my_random_line_biased[0][1], my_random_line_biased[0][0] - my_random_line_biased[1][0]])
+
+                #find the dot product
+                my_dot_product_value = np.dot(my_previous_line_vector, my_random_line_biased_vector)
+
+                #if we have visited this already, move on
+                if (my_random_endpoint_coordinate in forbidden_points):
+
+                    continue
+
+                #get distance of random point from source of line
+                dist = np.sqrt(np.square(source_of_line[0] - random_row_coordinate) + np.square(source_of_line[1] - random_col_coordinate))
+                
+                #get the value of that point at that random coord (should be 0 or 1)
+                pointmap_value = pointmap[random_row_coordinate, random_col_coordinate]
+
+                #if the point is one and fulfills reach requirements and fulfills dot product requirements
+                if (pointmap_value == 1 and dist >= min_reach and dist <= max_reach and my_dot_product_value >= 0):
+
+                    jump_to_this_endpoint.append(my_random_endpoint_coordinate)
+
+                #else, keep searching
+                else:
+
+                    continue
 
         #store that endpoint for the next line's source
         previous_endpoint = jump_to_this_endpoint[0]
+
+        #create storage for the next loop that keeps track of the line that was just drawn
+        my_previous_line = [source_of_line, jump_to_this_endpoint[0]]
+
 
         #put the current state of the canvas into the list
         frames.append(np.copy(canvas))
