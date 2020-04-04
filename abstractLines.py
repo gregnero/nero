@@ -4,7 +4,7 @@ import cv2
 import matplotlib.pyplot as plt
 from progressbar import ProgressBar
 
-def abstractLines(path, min_reach, max_reach, line_color, max_number_of_line_colors, max_line_thickness, bkrd_color, canny_kernal_size, lines, view_pointmap):
+def abstractLines(path, min_reach, max_reach, line_color, line_flexibility, max_number_of_line_colors, max_line_thickness, bkrd_color, canny_kernal_size, lines, view_pointmap):
 
     """ Draws some lines, or something like that. 
 
@@ -16,6 +16,8 @@ def abstractLines(path, min_reach, max_reach, line_color, max_number_of_line_col
                           For grayscale images, line_color should be 'white' or 'black'.
                           If 'color' is requested, lines will be draw by choosing and looping 
                           through the top three colors in the image's color palette.
+        line_flexibility (float): Acceptable range (-1, 1). If positive, next line choice will be in same general "direction."
+                                  If negative, will allow for lines to "backtrack." Based on simple dot product theory.
         max_number_of_line_colors (int): The maximum possible number of line colors you want to cycle through.
         max_line_thickness (int): The maximum thickness of the line in units of pixels. Lines are drawn with random thickness
                                   between [1, max_line_thickness].
@@ -71,6 +73,14 @@ def abstractLines(path, min_reach, max_reach, line_color, max_number_of_line_col
     if (min_reach > rows or min_reach > cols):
 
         print("PLEASE MAKE SURE min_reach IS LESS THAN THE SIZE OF THE IMAGE IN EITHER DIMENSION")
+        return -1
+
+
+    #check flexibility conditions
+    if (line_flexibility <= -1 or line_flexibility >= 1):
+
+        #because choosing a line "parallel" with the line previous is just unreasonable
+        print("ERROR: PLEASE ENTER A VALID LINE FLEXIBILITY")
         return -1
     
     #choose the line color(s) that will be drawn with
@@ -163,6 +173,15 @@ def abstractLines(path, min_reach, max_reach, line_color, max_number_of_line_col
         #append to forbid
         forbidden_points.append(source_of_line)
 
+        #if we have visitied all posible points in the image
+        #could also just compare sum of pointmap to # of lines requested right off the bat?
+        if (len(forbidden_points) == np.sum(pointmap)):
+
+            print("YOU TOUCHED ALL OF THE LINES, KID. BETTER LUCK NEXT TIME.")
+            print("DECREASE YOUR KERNAL SIZE YA GOOF.")
+
+            return -1
+
         #establish endpoint storage for this line
         jump_to_this_endpoint = []
 
@@ -173,12 +192,28 @@ def abstractLines(path, min_reach, max_reach, line_color, max_number_of_line_col
 
             ticker = ticker + 1
 
-            #if we search for time == size of the image, call it quits
-            if (ticker == (2*rows*cols)):
+            #if we search for time == size of the image, pick a new startin point elsewhere in image
+            if (ticker == (rows*cols)):
 
-                print("ERROR: ENDPOINT SEARCH FAILED. TRY INCREASING REACH OR DECREASING CANNY KERNAL SIZE.")
-                return -1
-            
+                #pick a new source
+                source_of_line_storage = []
+                while (len(source_of_line_storage) == 0):
+                    
+                    r_rand = np.random.randint(0, rows)
+                    c_rand = np.random.randint(0, cols)
+                    my_source_of_line = (r_rand, c_rand)
+
+                    my_chosen_point = pointmap[r_rand, c_rand]
+
+                    if (my_chosen_point == 1):
+
+                        source_of_line_storage.append(my_source_of_line)
+                        source_of_line = source_of_line_storage[0]
+
+                    else:
+
+                        continue
+
             #get random coord
             upper_row_coord = source_of_line[0] - max_reach
             lower_row_coord = source_of_line[0] + max_reach
@@ -237,6 +272,11 @@ def abstractLines(path, min_reach, max_reach, line_color, max_number_of_line_col
 
             else:
 
+                #if we have visited this already, move on
+                if (my_random_endpoint_coordinate in forbidden_points):
+
+                    continue
+
                 #get bias
                 my_bias_x = my_previous_line[0][0] - my_previous_line[1][0]
                 my_bias_y = my_previous_line[0][1] - my_previous_line[1][1]
@@ -251,13 +291,20 @@ def abstractLines(path, min_reach, max_reach, line_color, max_number_of_line_col
                 my_previous_line_vector = np.array([my_previous_line[1][1] - my_previous_line[0][1], my_previous_line[0][0] - my_previous_line[1][0]])
                 my_random_line_biased_vector = np.array([my_random_line_biased[1][1] - my_random_line_biased[0][1], my_random_line_biased[0][0] - my_random_line_biased[1][0]])
 
-                #find the dot product
-                my_dot_product_value = np.dot(my_previous_line_vector, my_random_line_biased_vector)
+                #max normalize each of the vectors to make them unit
+                my_previous_line_vector_magnitude =  np.sqrt(np.sum(np.square(my_previous_line_vector)))
+                my_random_line_biased_vector_magnitude =  np.sqrt(np.sum(np.square(my_random_line_biased_vector)))
 
-                #if we have visited this already, move on
-                if (my_random_endpoint_coordinate in forbidden_points):
+                #catch for divide by zero error... this shouldn't happen but it keeps happening so I'll just put this here for now
+                if (my_previous_line_vector_magnitude == 0 or my_random_line_biased_vector_magnitude == 0):
 
                     continue
+
+                my_previous_line_vector_mn = my_previous_line_vector / my_previous_line_vector_magnitude
+                my_random_line_biased_vector_mn = my_random_line_biased_vector / my_random_line_biased_vector_magnitude
+
+                #find the dot product
+                my_dot_product_value = np.dot(my_previous_line_vector_mn, my_random_line_biased_vector_mn)
 
                 #get distance of random point from source of line
                 dist = np.sqrt(np.square(source_of_line[0] - random_row_coordinate) + np.square(source_of_line[1] - random_col_coordinate))
@@ -266,7 +313,7 @@ def abstractLines(path, min_reach, max_reach, line_color, max_number_of_line_col
                 pointmap_value = pointmap[random_row_coordinate, random_col_coordinate]
 
                 #if the point is one and fulfills reach requirements and fulfills dot product requirements
-                if (pointmap_value == 1 and dist >= min_reach and dist <= max_reach and my_dot_product_value >= 0):
+                if (pointmap_value == 1 and dist >= min_reach and dist <= max_reach and my_dot_product_value >= line_flexibility):
 
                     jump_to_this_endpoint.append(my_random_endpoint_coordinate)
 
@@ -280,7 +327,6 @@ def abstractLines(path, min_reach, max_reach, line_color, max_number_of_line_col
 
         #create storage for the next loop that keeps track of the line that was just drawn
         my_previous_line = [source_of_line, jump_to_this_endpoint[0]]
-
 
         #put the current state of the canvas into the list
         frames.append(np.copy(canvas))
