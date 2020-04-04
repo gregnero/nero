@@ -174,14 +174,36 @@ def abstractLines(path, min_reach, max_reach, line_color, max_number_of_line_col
             ticker = ticker + 1
 
             #if we search for time == size of the image, call it quits
-            if (ticker == (rows*cols)):
+            if (ticker == (2*rows*cols)):
 
                 print("ERROR: ENDPOINT SEARCH FAILED. TRY INCREASING REACH OR DECREASING CANNY KERNAL SIZE.")
                 return -1
             
-            #get random coord in the search block region
-            random_row_coordinate = np.random.randint(0, rows)
-            random_col_coordinate = np.random.randint(0, cols)
+            #get random coord
+            upper_row_coord = source_of_line[0] - max_reach
+            lower_row_coord = source_of_line[0] + max_reach
+            
+            if (upper_row_coord < 0):
+
+                upper_row_coord = 0
+
+            if (lower_row_coord > rows):
+
+                lower_row_coord = rows
+
+            left_col_coord = source_of_line[1] - max_reach
+            right_col_coord = source_of_line[1] + max_reach
+
+            if (left_col_coord < 0):
+
+                left_col_coord = 0
+
+            if (right_col_coord > cols):
+
+                right_col_coord = cols
+
+            random_row_coordinate = np.random.randint(upper_row_coord, lower_row_coord)
+            random_col_coordinate = np.random.randint(left_col_coord, right_col_coord)
 
             #create random coord tuple
             my_random_endpoint_coordinate = (random_row_coordinate, random_col_coordinate)
