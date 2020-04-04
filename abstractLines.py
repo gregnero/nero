@@ -139,6 +139,9 @@ def abstractLines(path, min_reach, max_reach, line_color, max_number_of_line_col
     #set up pbar
     pbar = ProgressBar()
 
+    #instantiate storage to store points that have been visited
+    forbidden_points = []
+
     #begin the lines loop
     for l in pbar(range(0, lines)):
 
@@ -155,6 +158,9 @@ def abstractLines(path, min_reach, max_reach, line_color, max_number_of_line_col
         else:
 
             source_of_line = previous_endpoint
+
+        #append to forbid
+        forbidden_points.append(source_of_line)
 
         #establish endpoint storage for this line
         jump_to_this_endpoint = []
@@ -177,6 +183,11 @@ def abstractLines(path, min_reach, max_reach, line_color, max_number_of_line_col
 
             #create random coord tuple
             my_random_endpoint_coordinate = (random_row_coordinate, random_col_coordinate)
+
+            #if we have visited this already, move on
+            if (my_random_endpoint_coordinate in forbidden_points):
+
+                continue
 
             #get distance of random point from source of line
             dist = np.sqrt(np.square(source_of_line[0] - random_row_coordinate) + np.square(source_of_line[1] - random_col_coordinate))
