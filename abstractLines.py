@@ -117,12 +117,12 @@ def abstractLines(path, min_reach, max_reach, line_color, line_flexibility, max_
     #get a binary pointmap for the image
     pointmap = cv2.Canny(src, canny_kernal_size, canny_kernal_size) #returns points either 0 or 255
     pointmap = pointmap / np.max(pointmap) #makes points either 0 or 1
+    pointmap = pointmap.astype(int)
 
     if (view_pointmap == True):
 
         plt.imshow(pointmap, cmap = 'gray')
         plt.title("Pointmap")
-        plt.axis("off")
         plt.show()
 
     #pick an origin to start on
@@ -184,7 +184,6 @@ def abstractLines(path, min_reach, max_reach, line_color, line_flexibility, max_
 
         #establish endpoint storage for this line
         jump_to_this_endpoint = []
-
 
         ticker = 0 #set up for case where an endpoint can't be found
         #while we haven't found an endpoint, look for one
@@ -335,7 +334,7 @@ def abstractLines(path, min_reach, max_reach, line_color, line_flexibility, max_
         if (line_color == 'white' or line_color == 'black'):
 
             #draw the line and reassign canvas
-            cv2.line(canvas, source_of_line, jump_to_this_endpoint[0], line_colors, thickness = np.random.randint(1, max_line_thickness))
+            cv2.line(canvas, (source_of_line[1], source_of_line[0]), (jump_to_this_endpoint[0][1], jump_to_this_endpoint[0][0]), line_colors, thickness = np.random.randint(1, max_line_thickness))
 
         #if we want to cycle through the colors 
         elif (line_color == 'color'):
@@ -343,7 +342,7 @@ def abstractLines(path, min_reach, max_reach, line_color, line_flexibility, max_
             bgr_value = line_colors[color_counter]
 
             #draw the line and reassign canvas
-            cv2.line(canvas, source_of_line, jump_to_this_endpoint[0], bgr_value, thickness = np.random.randint(1, max_line_thickness))
+            cv2.line(canvas, (source_of_line[1], source_of_line[0]), (jump_to_this_endpoint[0][1], jump_to_this_endpoint[0][0]), bgr_value, thickness = np.random.randint(1, max_line_thickness))
 
         #++ the triplet counter
         color_counter = color_counter + 1
