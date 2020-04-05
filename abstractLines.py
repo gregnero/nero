@@ -100,11 +100,11 @@ def abstractLines(path, min_reach, max_reach, line_color, line_flexibility, max_
 
     elif (line_color == 'color'):
 
-        hue_separation = 8
-        sq = 0.7
-        vq = 0.7
+        hue_separation = 5
+        sq = 0.3
+        vq = 0.3
         space = 'bgr'
-        line_colors = color.colorPalette(path, False, max_number_of_line_colors, hue_separation, sq, vq, space)
+        line_colors = color.colorPalette(path, True, max_number_of_line_colors, hue_separation, sq, vq, space)
 
         if (len(line_colors) != max_number_of_line_colors):
 
@@ -207,8 +207,8 @@ def abstractLines(path, min_reach, max_reach, line_color, line_flexibility, max_
 
             ticker = ticker + 1
 
-            #if we search for time == size of the image, pick a new startin point elsewhere in image
-            if (ticker == (rows*cols)):
+            #if we search for time == size of the search block, pick a new startin point elsewhere in image (search for time == size of image?)
+            if (ticker == (max_reach * max_reach)):
 
                 #pick a new source
                 source_of_line_storage = []
@@ -224,6 +224,7 @@ def abstractLines(path, min_reach, max_reach, line_color, line_flexibility, max_
 
                         source_of_line_storage.append(my_source_of_line)
                         source_of_line = source_of_line_storage[0]
+                        ticker = 0 #this line is very very important 
 
                     else:
 
