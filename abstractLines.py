@@ -34,6 +34,11 @@ def abstractLines(path, min_reach, max_reach, line_color, line_flexibility, max_
                        value of lines.
     """
 
+    #TODO: add color option for bkrd_color
+    #TODO: double check color accuracy of lines...
+    #TODO: auto-re-run to reassign max_number_of_line_colors if max desired can't be found
+    #TODO: catch kernal size if too large right off the bat ??
+
     #read in image as grayscale
     src = cv2.imread(path, cv2.IMREAD_GRAYSCALE) 
 
@@ -94,9 +99,9 @@ def abstractLines(path, min_reach, max_reach, line_color, line_flexibility, max_
 
     elif (line_color == 'color'):
 
-        hue_separation = 10
-        sq = 0.9
-        vq = 0.8
+        hue_separation = 8
+        sq = 0.7
+        vq = 0.7
         space = 'bgr'
         line_colors = color.colorPalette(path, False, max_number_of_line_colors, hue_separation, sq, vq, space)
 
@@ -118,6 +123,16 @@ def abstractLines(path, min_reach, max_reach, line_color, line_flexibility, max_
     pointmap = cv2.Canny(src, canny_kernal_size, canny_kernal_size) #returns points either 0 or 255
     pointmap = pointmap / np.max(pointmap) #makes points either 0 or 1
     pointmap = pointmap.astype(int)
+
+    #see how many points are possible
+    number_of_available_points = int(np.sum(pointmap))
+
+    if (lines > number_of_available_points):
+
+        print("ERROR: NOT ENOUGH AVAILABLE POINTS TO COMPLETE LINE REQUEST.")
+        print("TRY DECREASING KERNAL SIZE OR DECREASING NUMBER OF LINES REQUESTED.")
+        return -1
+
 
     if (view_pointmap == True):
 
