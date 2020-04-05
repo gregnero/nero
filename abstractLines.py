@@ -38,6 +38,7 @@ def abstractLines(path, min_reach, max_reach, line_color, line_flexibility, max_
     #TODO: double check color accuracy of lines...
     #TODO: auto-re-run to reassign max_number_of_line_colors if max desired can't be found
     #TODO: catch kernal size if too large right off the bat ??
+    #TODO: add option to touch every point in pointmap before completion
 
     #read in image as grayscale
     src = cv2.imread(path, cv2.IMREAD_GRAYSCALE) 
