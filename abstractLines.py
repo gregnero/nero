@@ -35,7 +35,6 @@ def abstractLines(path, min_reach, max_reach, line_color, line_flexibility, max_
     """
 
     #TODO: add color option for bkrd_color
-    #TODO: double check color accuracy of lines...
     #TODO: auto-re-run to reassign max_number_of_line_colors if max desired can't be found
     #TODO: catch kernal size if too large right off the bat ??
     #TODO: add option to touch every point in pointmap before completion
@@ -50,11 +49,11 @@ def abstractLines(path, min_reach, max_reach, line_color, line_flexibility, max_
     #set up the background canvas that will be drawn on
     if (bkrd_color == 'white'):
 
-        canvas = np.ones((rows,cols, 3), np.uint8) 
+        canvas = np.ones((rows,cols, 3)) 
     
     elif (bkrd_color == 'black'):
 
-        canvas = np.zeros((rows, cols, 3), np.uint8)
+        canvas = np.zeros((rows, cols, 3))
 
     else:
 
@@ -100,9 +99,9 @@ def abstractLines(path, min_reach, max_reach, line_color, line_flexibility, max_
 
     elif (line_color == 'color'):
 
-        hue_separation = 5
-        sq = 0.3
-        vq = 0.3
+        hue_separation = 10
+        sq = 0.8
+        vq = 0.8
         space = 'bgr'
         line_colors = color.colorPalette(path, True, max_number_of_line_colors, hue_separation, sq, vq, space)
 
@@ -208,6 +207,7 @@ def abstractLines(path, min_reach, max_reach, line_color, line_flexibility, max_
             ticker = ticker + 1
 
             #if we search for time == size of the search block, pick a new startin point elsewhere in image (search for time == size of image?)
+            #maybe make this 2 * mr * mr b/c of statistics?
             if (ticker == (max_reach * max_reach)):
 
                 #pick a new source
@@ -357,9 +357,13 @@ def abstractLines(path, min_reach, max_reach, line_color, line_flexibility, max_
         elif (line_color == 'color'):
 
             bgr_value = line_colors[color_counter]
+            b_norm = bgr_value[0] / 255
+            g_norm = bgr_value[1] / 255
+            r_norm = bgr_value[2] / 255
+            bgr_value_norm = (b_norm, g_norm, r_norm)
 
             #draw the line and reassign canvas
-            cv2.line(canvas, (source_of_line[1], source_of_line[0]), (jump_to_this_endpoint[0][1], jump_to_this_endpoint[0][0]), bgr_value, thickness = np.random.randint(1, max_line_thickness))
+            cv2.line(canvas, (source_of_line[1], source_of_line[0]), (jump_to_this_endpoint[0][1], jump_to_this_endpoint[0][0]), bgr_value_norm, thickness = np.random.randint(1, max_line_thickness))
 
         #++ the triplet counter
         color_counter = color_counter + 1
