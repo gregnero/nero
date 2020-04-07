@@ -28,6 +28,10 @@ def abstractLines(path, min_reach, max_reach, line_color, line_flexibility, numb
 
     """
 
+    #TODO: improve memory effeciency!
+    #TODO: automatically determine kernal size?
+    #TODO: noise reduction for pointmap (or, edge enhancement?)
+
     #instantiate return object
     frames = []
 
