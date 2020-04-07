@@ -132,7 +132,7 @@ def abstractLines(path, min_reach, max_reach, line_color, line_flexibility, numb
     number_of_available_points = int(np.sum(pointmap))
 
     #because of forbidden_points enforcement, catch inundation case
-    if (lines > number_of_available_points):
+    if (lines >= number_of_available_points):
 
         print("ERROR: NOT ENOUGH AVAILABLE POINTS TO COMPLETE LINE REQUEST.")
         print("TRY DECREASING KERNAL SIZE OR DECREASING NUMBER OF LINES REQUESTED.")
