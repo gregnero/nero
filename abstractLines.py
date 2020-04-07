@@ -4,45 +4,35 @@ import cv2
 import matplotlib.pyplot as plt
 from progressbar import ProgressBar
 
-def abstractLines(path, min_reach, max_reach, line_color, line_flexibility, max_number_of_line_colors, max_line_thickness, bkrd_color, canny_kernal_size, lines, view_pointmap):
+def abstractLines(path, min_reach, max_reach, line_color, line_flexibility, number_of_line_colors, max_line_thickness, bkrd_color, canny_kernal_size, lines, view_pointmap):
 
     """ Draws some lines, or something like that. 
 
     Args:
         path (str): Path to the image.
-        min_reach (float): The minimum for how far the origin of a line will search for an endpoint in pixel space.
-        max_reach (float): The maximum for how far the origin of a line will search for an endpoint in pixel space.
-        line_color (str): {'white', 'black', 'color'} What color the lines should be.
-                          For grayscale images, line_color should be 'white' or 'black'.
-                          If 'color' is requested, lines will be draw by choosing and looping 
-                          through the top three colors in the image's color palette.
-        line_flexibility (float): Acceptable range (-1, 1). If positive, next line choice will be in same general "direction."
-                                  If negative, will allow for lines to "backtrack." Based on simple dot product theory.
-        max_number_of_line_colors (int): The maximum possible number of line colors you want to cycle through.
-        max_line_thickness (int): The maximum thickness of the line in units of pixels. Lines are drawn with random thickness
-                                  between [1, max_line_thickness].
+        min_reach (float): The minimum distance that the origin of a line will search for an endpoint in pixel space.
+        max_reach (float): The maximum distance that the origin of a line will search for an endpoint in pixel space.
+        line_color (str): {'white', 'black', 'dark colors', 'light colors'} What color the lines should be. 
+        line_flexibility (float): (-1, 1). Larger positive values will encourage straight lines.
+        number_of_line_colors (int): The number of line colors you want to try to cycle through.
+        max_line_thickness (int): The maximum thickness of the line in units of pixels. Lines are drawn with random thickness between [1, max_line_thickness].
         bkrd_color (str): {'white', 'black'} What color the background should be.
-        canny_kernal_size (int): square kernal size for canny edge detection. 50 is recommended value.
-                                 The higher the number the stricter the lines will be.
-                                 For more "line points" make the number lower.
-        lines (int): The number of lines that should be drawn.
-        view_pointmap (bool): Option to see the binary pointmap of the image.
+        canny_kernal_size (int): Square kernal size for canny edge detection. Larger values will "erode" image more.
+        lines (int): The number of lines you would like to try and draw. 
+        view_pointmap (bool): Option to see the binary pointmap of the image. Useful for canny_kernal_size decision.
             
     Returns:
-        frames (list): Collection of all of the frames, one after another. Each frame is a 2D
-                       single channel numpy array. The length of this list will be equal to the integer
-                       value of lines.
+        frames (list): Collection of each step in the line drawing process. 
+
     """
 
-    #TODO: add color option for bkrd_color
-    #TODO: auto-re-run to reassign max_number_of_line_colors if max desired can't be found
-    #TODO: catch kernal size if too large right off the bat ??
-    #TODO: add option to touch every point in pointmap before completion
+    #instantiate return object
+    frames = []
 
     #read in image as grayscale
     src = cv2.imread(path, cv2.IMREAD_GRAYSCALE) 
 
-    #get the rows, cols, chans in the image
+    #get the number of rows and cols in the image
     rows = np.shape(src)[0]
     cols = np.shape(src)[1]
 
@@ -60,9 +50,6 @@ def abstractLines(path, min_reach, max_reach, line_color, line_flexibility, max_
         print("ERROR: PLEASE ENTER A VALID BACKGROUND COLOR.")
         print("BACKGROUND COLOR REQUESTED:", bkrd_color)
         return -1
-
-    #instantiate return object and append blank canvas
-    frames = []
 
     #check reach conditions
     if (min_reach == max_reach):
@@ -84,7 +71,8 @@ def abstractLines(path, min_reach, max_reach, line_color, line_flexibility, max_
     #check flexibility conditions
     if (line_flexibility <= -1 or line_flexibility >= 1):
 
-        #because choosing a line "parallel" with the line previous is just unreasonable
+        #equality conditions are prohibited because choosing a line "parallel" with the line previous is just silly
+
         print("ERROR: PLEASE ENTER A VALID LINE FLEXIBILITY")
         return -1
     
@@ -97,21 +85,35 @@ def abstractLines(path, min_reach, max_reach, line_color, line_flexibility, max_
 
         line_colors = (0, 0, 0)
 
-    elif (line_color == 'color'):
+    elif (line_color == 'light colors' or line_color == 'dark colors'):
 
+        #set internal private parameters for choosing colors
+        view = False 
         hue_separation = 10
-        sq = 0.8
-        vq = 0.8
         space = 'bgr'
-        line_colors = color.colorPalette(path, True, max_number_of_line_colors, hue_separation, sq, vq, space)
 
-        if (len(line_colors) != max_number_of_line_colors):
+        #make decision about what "kind" of colors
+        if (line_color == 'light colors'):
 
-            print("ERROR: YOU DUMMY, YOU ARE (PROBABLY) REQUESTING LINE COLOR FOR A GRAYSCALE IMAGE!")
-            print("OR, THE COLOR PALETTE HELPER COULDN'T FIND", max_number_of_line_colors, "COLORS IN YOUR IMAGE!")
-            print("REGARDLESS, SOMETHING IS FISHY!")
-            print("LENGTH OF line_colors:", len(line_colors))
-            return -1
+            sq = 0.8
+            vq = 0.8
+
+        elif (line_color == 'dark colors'):
+
+            sq = 0.4
+            vq = 0.3
+
+        #get the line colors
+        line_colors = color.colorPalette(path, view, number_of_line_colors, hue_separation, sq, vq, space)
+
+        #if we can't find the number requested, just pick the max that could be found for these parameters 
+        if (len(line_colors) != number_of_line_colors):
+
+            #generate new palette with updated number of possible colors
+            line_colors = color.colorPalette(path, view, len(line_colors), hue_separation, sq, vq, space)
+
+            #update number of line colors
+            number_of_line_colors = len(line_colors)
     
     else:
 
@@ -127,13 +129,15 @@ def abstractLines(path, min_reach, max_reach, line_color, line_flexibility, max_
     #see how many points are possible
     number_of_available_points = int(np.sum(pointmap))
 
+    #because of forbidden_points enforcement, catch inundation case
     if (lines > number_of_available_points):
 
         print("ERROR: NOT ENOUGH AVAILABLE POINTS TO COMPLETE LINE REQUEST.")
         print("TRY DECREASING KERNAL SIZE OR DECREASING NUMBER OF LINES REQUESTED.")
+        print("NUMBER OF AVAILABLE POINTS:", number_of_available_points)
         return -1
 
-
+    #show the pointmap if the user wants it
     if (view_pointmap == True):
 
         plt.imshow(pointmap, cmap = 'gray')
@@ -170,8 +174,8 @@ def abstractLines(path, min_reach, max_reach, line_color, line_flexibility, max_
     #begin the lines loop
     for l in pbar(range(0, lines)):
 
-        #reset triplet counter when it reaches limit
-        if (color_counter == max_number_of_line_colors):
+        #reset color counter when it reaches limit
+        if (color_counter == number_of_line_colors):
 
             color_counter = 0
 
@@ -180,7 +184,6 @@ def abstractLines(path, min_reach, max_reach, line_color, line_flexibility, max_
 
             source_of_line = origin[0]
 
-
         else:
 
             source_of_line = previous_endpoint
@@ -188,52 +191,49 @@ def abstractLines(path, min_reach, max_reach, line_color, line_flexibility, max_
         #append to forbid
         forbidden_points.append(source_of_line)
 
-        #if we have visitied all posible points in the image
-        #could also just compare sum of pointmap to # of lines requested right off the bat?
-        if (len(forbidden_points) == np.sum(pointmap)):
-
-            print("YOU TOUCHED ALL OF THE LINES, KID. BETTER LUCK NEXT TIME.")
-            print("DECREASE YOUR KERNAL SIZE YA GOOF.")
-
-            return -1
-
         #establish endpoint storage for this line
         jump_to_this_endpoint = []
 
-        ticker = 0 #set up for case where an endpoint can't be found
-        #while we haven't found an endpoint, look for one
+        #look for a valid endpoint
+        ticker = 0
         while (len(jump_to_this_endpoint) == 0):
 
             ticker = ticker + 1
 
-            #if we search for time == size of the search block, pick a new startin point elsewhere in image (search for time == size of image?)
-            #maybe make this 2 * mr * mr b/c of statistics?
+            #if we search for an endpoint for t = size of max reach block, pick a new source elsewhere
             if (ticker == (max_reach * max_reach)):
 
                 #pick a new source
                 source_of_line_storage = []
                 while (len(source_of_line_storage) == 0):
                     
+                    #choose new random coordinate
                     r_rand = np.random.randint(0, rows)
                     c_rand = np.random.randint(0, cols)
                     my_source_of_line = (r_rand, c_rand)
 
+                    #get pointmap value (zero or one)
                     my_chosen_point = pointmap[r_rand, c_rand]
 
+                    #if it's one, pick it
                     if (my_chosen_point == 1):
 
                         source_of_line_storage.append(my_source_of_line)
                         source_of_line = source_of_line_storage[0]
-                        ticker = 0 #this line is very very important 
+                        ticker = 0 #this line is very very important, resets ticker!
 
+                    #else, keep searching
                     else:
 
                         continue
 
-            #get random coord
+            #get random coordinate limits (within max_reach range)
             upper_row_coord = source_of_line[0] - max_reach
             lower_row_coord = source_of_line[0] + max_reach
-            
+            left_col_coord = source_of_line[1] - max_reach
+            right_col_coord = source_of_line[1] + max_reach
+
+            #check conditions for saftey against core dump
             if (upper_row_coord < 0):
 
                 upper_row_coord = 0
@@ -241,9 +241,6 @@ def abstractLines(path, min_reach, max_reach, line_color, line_flexibility, max_
             if (lower_row_coord > rows):
 
                 lower_row_coord = rows
-
-            left_col_coord = source_of_line[1] - max_reach
-            right_col_coord = source_of_line[1] + max_reach
 
             if (left_col_coord < 0):
 
@@ -253,10 +250,11 @@ def abstractLines(path, min_reach, max_reach, line_color, line_flexibility, max_
 
                 right_col_coord = cols
 
+            #get the random coordinate inside of that search range
             random_row_coordinate = np.random.randint(upper_row_coord, lower_row_coord)
             random_col_coordinate = np.random.randint(left_col_coord, right_col_coord)
 
-            #create random coord tuple
+            #create random coordinate tuple
             my_random_endpoint_coordinate = (random_row_coordinate, random_col_coordinate)
 
             #create storage for the random line under inspection [source -> endpoint]
@@ -273,7 +271,7 @@ def abstractLines(path, min_reach, max_reach, line_color, line_flexibility, max_
                 #get distance of random point from source of line
                 dist = np.sqrt(np.square(source_of_line[0] - random_row_coordinate) + np.square(source_of_line[1] - random_col_coordinate))
                 
-                #get the value of that point at that random coord (should be 0 or 1)
+                #get the value of that point at that random coordinate (zero or one)
                 pointmap_value = pointmap[random_row_coordinate, random_col_coordinate]
 
                 #if the point is one and fulfills reach requirements
@@ -311,7 +309,7 @@ def abstractLines(path, min_reach, max_reach, line_color, line_flexibility, max_
                 my_previous_line_vector_magnitude =  np.sqrt(np.sum(np.square(my_previous_line_vector)))
                 my_random_line_biased_vector_magnitude =  np.sqrt(np.sum(np.square(my_random_line_biased_vector)))
 
-                #catch for divide by zero error... this shouldn't happen but it keeps happening so I'll just put this here for now
+                #catch for divide by zero error
                 if (my_previous_line_vector_magnitude == 0 or my_random_line_biased_vector_magnitude == 0):
 
                     continue
@@ -354,9 +352,12 @@ def abstractLines(path, min_reach, max_reach, line_color, line_flexibility, max_
             cv2.line(canvas, (source_of_line[1], source_of_line[0]), (jump_to_this_endpoint[0][1], jump_to_this_endpoint[0][0]), line_colors, thickness = np.random.randint(1, max_line_thickness))
 
         #if we want to cycle through the colors 
-        elif (line_color == 'color'):
+        elif (line_color == 'dark colors' or line_color == 'light colors'):
 
+            #get the current bgr value
             bgr_value = line_colors[color_counter]
+            
+            #uint8 normalize to make agreeable with cv2.line()
             b_norm = bgr_value[0] / 255
             g_norm = bgr_value[1] / 255
             r_norm = bgr_value[2] / 255
@@ -365,8 +366,8 @@ def abstractLines(path, min_reach, max_reach, line_color, line_flexibility, max_
             #draw the line and reassign canvas
             cv2.line(canvas, (source_of_line[1], source_of_line[0]), (jump_to_this_endpoint[0][1], jump_to_this_endpoint[0][0]), bgr_value_norm, thickness = np.random.randint(1, max_line_thickness))
 
-        #++ the triplet counter
+        #++ the colorcounter
         color_counter = color_counter + 1
 
-    
+    #return the object :)
     return frames
