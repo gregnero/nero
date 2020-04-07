@@ -22,21 +22,16 @@ def abstractLines(path, min_reach, max_reach, line_color, line_flexibility, numb
         view_pointmap (bool): Option to see the binary pointmap of the image. Useful for canny_kernal_size decision.
             
     Returns:
-        frames (list): Collection of each step in the line drawing process. 
+        canvas (numpy.ndarray): The final drawing.
 
-    To save images in another script, follow this guideline: cv2.imwrite(fname, my_frame*255)
+    To save images in another script, follow this guideline: cv2.imwrite(fname, canvas*255)
 
     """
 
     '''
-    #TODO: improve memory effeciency!
-           Try: storing line coordinates in pairs (or, some other scheme) and then at the very end draw onto one canvas in a loop? Would this work? Would sacrifice frame by frame analysis... Could have option? This requires more thought.
     #TODO: automatically determine kernal size?
     #TODO: noise reduction for pointmap (or, edge enhancement?)
     '''
-
-    #instantiate return object
-    frames = []
 
     #read in image as grayscale
     src = cv2.imread(path, cv2.IMREAD_GRAYSCALE) 
@@ -171,22 +166,17 @@ def abstractLines(path, min_reach, max_reach, line_color, line_flexibility, numb
 
             continue
 
-    #set up counter for color looping
-    color_counter = 0
-
     #set up pbar
     pbar = ProgressBar()
 
     #instantiate storage to store points that have been visited
     forbidden_points = []
 
+    #instantiate storage for storing line coordinates
+    edgelist = []
+
     #begin the lines loop
     for l in pbar(range(0, lines)):
-
-        #reset color counter when it reaches limit
-        if (color_counter == number_of_line_colors):
-
-            color_counter = 0
 
         #choose source for this line
         if (l == 0):
@@ -351,14 +341,27 @@ def abstractLines(path, min_reach, max_reach, line_color, line_flexibility, numb
         #create storage for the next loop that keeps track of the line that was just drawn
         my_previous_line = [source_of_line, jump_to_this_endpoint[0]]
 
-        #put the current state of the canvas into the list
-        frames.append(np.copy(canvas))
+        #add the line that was just drawn to the edgelist (nb coordinate correction)
+        #stored as: [(source coordinate) -> (sink coordinate)]
+        edgelist.append([(source_of_line[1], source_of_line[0]), (jump_to_this_endpoint[0][1], jump_to_this_endpoint[0][0])])
+        
+   
+    #set up counter for color looping
+    color_counter = 0
+
+    #draw the edges
+    for edge in edgelist:
+
+        #reset color counter when it reaches limit
+        if (color_counter == number_of_line_colors):
+
+            color_counter = 0
 
         #if the line is black or white
         if (line_color == 'white' or line_color == 'black'):
 
             #draw the line and reassign canvas
-            cv2.line(canvas, (source_of_line[1], source_of_line[0]), (jump_to_this_endpoint[0][1], jump_to_this_endpoint[0][0]), line_colors, thickness = np.random.randint(1, max_line_thickness))
+            cv2.line(canvas, edge[0], edge[1], line_colors, thickness = np.random.randint(1, max_line_thickness))
 
         #if we want to cycle through the colors 
         elif (line_color == 'dark colors' or line_color == 'light colors'):
@@ -373,10 +376,10 @@ def abstractLines(path, min_reach, max_reach, line_color, line_flexibility, numb
             bgr_value_norm = (b_norm, g_norm, r_norm)
 
             #draw the line and reassign canvas
-            cv2.line(canvas, (source_of_line[1], source_of_line[0]), (jump_to_this_endpoint[0][1], jump_to_this_endpoint[0][0]), bgr_value_norm, thickness = np.random.randint(1, max_line_thickness))
+            cv2.line(canvas, edge[0], edge[1], bgr_value_norm, thickness = np.random.randint(1, max_line_thickness))
 
         #++ the colorcounter
         color_counter = color_counter + 1
 
     #return the object :)
-    return frames
+    return canvas
