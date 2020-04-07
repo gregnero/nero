@@ -24,6 +24,8 @@ def abstractLines(path, min_reach, max_reach, line_color, line_flexibility, numb
     Returns:
         frames (list): Collection of each step in the line drawing process. 
 
+    To save images in another script, follow this guideline: cv2.imwrite(fname, my_frame*255)
+
     """
 
     #instantiate return object
