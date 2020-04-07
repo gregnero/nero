@@ -28,9 +28,12 @@ def abstractLines(path, min_reach, max_reach, line_color, line_flexibility, numb
 
     """
 
+    '''
     #TODO: improve memory effeciency!
+           Try: storing line coordinates in pairs (or, some other scheme) and then at the very end draw onto one canvas in a loop? Would this work? Would sacrifice frame by frame analysis... Could have option? This requires more thought.
     #TODO: automatically determine kernal size?
     #TODO: noise reduction for pointmap (or, edge enhancement?)
+    '''
 
     #instantiate return object
     frames = []
