@@ -4,7 +4,7 @@ import cv2
 import matplotlib.pyplot as plt
 from progressbar import ProgressBar
 
-def abstractLines(path, min_reach, max_reach, line_color, line_flexibility, number_of_line_colors, max_line_thickness, bkrd_color, canny_kernal_size, lines, view_pointmap):
+def doodle(path, min_reach, max_reach, line_color, line_flexibility, number_of_line_colors, max_line_thickness, bkrd_color, canny_kernal_size, lines, view_pointmap):
 
     """ Draws some lines, or something like that. 
 
