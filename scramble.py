@@ -10,13 +10,11 @@ def scramble(path, k, S):
         Visual cryptography!
 
     Details: By scrambling an NxN image S times with parameter k, you are "chaotically" 
-             rearranging the pixels. After some number of scrambles T the image will
-             exactly re-arrange itself. T is the period of this automorphism for image
-             of size NxN and free paramater k. Period depends on both k and N. Therefore,
-             the metrics T, k, and N form an ensemble of "secret keys." T is a function of
-             k and N and has no closed-form solution; it's chaotic. T can be experimentally 
-             determined. If you have an NxN image and know its period T, you choose free
-             parameter k to act as the single "secret key."
+             rearranging the pixel code values. After some number of scrambles T the image 
+             will exactly re-arrange itself. T is the period of this automorphism for image
+             of size NxN and free paramater k. Finding T is a nontrivial task because of its
+             chaotic nature. It can be experimentally determined through image processing.
+             I wrote a report on this if you are interested.
 
     Example Usage (Visual Cryptography): You have a "secret image" containing a message for 
             another party. You scramble this NxN image S times with free parameter k such 
