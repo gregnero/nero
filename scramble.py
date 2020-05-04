@@ -34,6 +34,7 @@ def scramble(path, k, S):
     """
 
     #TODO: experiment with color
+    #TODO: experiment/troubleshoot dtype errors
 
     #read in image as grayscale
     src = cv2.imread(path, cv2.IMREAD_GRAYSCALE) 
@@ -47,3 +48,34 @@ def scramble(path, k, S):
 
         print("ERROR: Please provide a square image to scramble.")
         return -1
+
+    #establish parameters for this toral automorphic family
+    a1 = 1
+    a2 = 1
+    a3 = k
+    a4 = k + 1
+
+    #instantiate blank array for the scrambled image
+    scrambled = np.zeros((rows, cols))
+
+    #create a copy of the source to manipulate
+    src_copy = np.copy(src)
+
+    for s in range(1, S+1):
+        
+        for r in range(0, rows):
+
+            for c in range(0, cols):
+
+                #get the new coordinate
+                new_row_coordinate = ((a1 * r) + (a2 * c)) % rows
+                new_col_coordinate = ((a3 * r) + (a4 * c)) % cols
+
+                #place the code value in the new coordinate
+                scrambled[new_row_coordinate, new_col_coordinate] = src_copy[r,c]
+
+
+        #pass along most recent scramble for the next scramble
+        src_copy = np.copy(scrambled)
+
+    return src_copy
