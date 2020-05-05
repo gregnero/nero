@@ -25,7 +25,7 @@ def scramble(path, k, S, c, k_r, k_g, k_b, S_r, S_g, S_b):
             effect, they are just "completing the orbit" of the period.
 
     Comment on Color: Users now have the option to independently scramble each R,G,B color
-                      channels! Each channel has its own k and S value. Have fun!
+                      channel! Each channel has its own k and S value. Have fun!
 
     Args:
         path (str): Path to the image
