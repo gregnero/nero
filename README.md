@@ -10,6 +10,7 @@ This is setup to be a Python module.  Clone this repository in your PYTHONPATH d
 * cv2
 * color
 * progressbar
+* nero
 
 # CONTACT INFO #
 Gregory Nero - gmn8357@rit.edu
