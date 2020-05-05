@@ -2,12 +2,13 @@ import numpy as np
 import cv2
 import matplotlib.pyplot as plt
 
-def scramble(path, k, S, c):
+def scramble(path, k, S, c, k_r, k_g, k_b, S_r, S_g, S_b):
 
-    """ Scrambles a square image according to a single-parameter (k) toral automorphic family.
+    """ Scrambles a square image according to a special toral automorphism.
         Consult Voyatzis & Pitas (1996) for more information.
         Periodicity is a property of this automorphism.
         Visual cryptography!
+        Now in color!
 
     Details: By scrambling an NxN image S times with parameter k, you are "chaotically" 
              rearranging the pixel code values. After some number of scrambles T the image 
@@ -23,32 +24,36 @@ def scramble(path, k, S, c):
             scrambling the already scrambled image (T-S) times with the same k value. In 
             effect, they are just "completing the orbit" of the period.
 
+    Comment on Color: Users now have the option to independently scramble each R,G,B color
+                      channels! Each channel has its own k and S value. Have fun!
+
     Args:
         path (str): Path to the image
         k (int): Free parameter in the automorphism that acts as a "secret key"
         S (int): The number of scrambles that you want to perform
-        c (boolean): Choice between color or grayscale input image. Color is experimental.
+        c (boolean): Choice between color or grayscale input image.
                      True -> color image input
                      False -> grayscale image input
-            
+        k_r (int): Free paramater for the red channel
+        k_g (int): Free parameter for the green channel
+        k_b (int): Free parameter for the blue channel
+        S_r (int): The number of times you want to scramble the red channel with k_r
+        S_g (int): The number of times you want to scramble the green channel with k_g
+        S_b (int): The number of times you want to scramble the blue channel with k_b
+
     Returns:
         dst (numpy.ndarray): The scrambled input image
 
     """
 
-    #TODO: experiment/troubleshoot dtype things
-    #TODO: consider "non-unified" scrambling of color channels...
-           # this could be cool because each channel could have a differnt free parameter
-           # right now, though, the channels are being scrambled in "unison"
-
-    #establish parameters for this toral automorphic family
-    a1 = 1
-    a2 = 1
-    a3 = k
-    a4 = k + 1
-
     #for grayscale images
     if (c == False):
+
+        #establish parameters for this toral automorphic family
+        a1 = 1
+        a2 = 1
+        a3 = k
+        a4 = k + 1
 
         #read in image as grayscale
         src = cv2.imread(path, cv2.IMREAD_GRAYSCALE) 
@@ -90,6 +95,18 @@ def scramble(path, k, S, c):
     #for color images
     elif (c == True):
 
+        #define common parameters
+        a1 = 1
+        a2 = 1
+
+        #define color-dependant paramaters
+        a3_r = k_r
+        a3_g = k_g
+        a3_b = k_b
+        a4_r = k_r + 1
+        a4_g = k_g + 1
+        a4_b = k_b + 1
+
         #read in image as color
         src = cv2.imread(path, cv2.IMREAD_COLOR) 
 
@@ -119,27 +136,58 @@ def scramble(path, k, S, c):
         green_channel_copy = np.copy(green_channel)
         red_channel_copy = np.copy(red_channel)
 
-        for s in range(1, S+1):
+        #scramble the red channel
+        for s in range(1, S_r+1):
             
             for r in range(0, rows):
 
                 for c in range(0, cols):
 
-                    #get the new coordinate
+                    #get the new coordinate for the red channel
                     new_row_coordinate = ((a1 * r) + (a2 * c)) % rows
-                    new_col_coordinate = ((a3 * r) + (a4 * c)) % cols
+                    new_col_coordinate_r = ((a3_r * r) + (a4_r * c)) % cols
 
                     #place the code value for each channel at the new coordinate
-                    blue_channel_scrambled[new_row_coordinate, new_col_coordinate] = blue_channel_copy[r,c]
-                    green_channel_scrambled[new_row_coordinate, new_col_coordinate] = green_channel_copy[r,c]
-                    red_channel_scrambled[new_row_coordinate, new_col_coordinate] = red_channel_copy[r,c]
+                    red_channel_scrambled[new_row_coordinate, new_col_coordinate_r] = red_channel_copy[r,c]
+
+            #pass along most recent scrambles for the next scrambles
+            red_channel_copy = np.copy(red_channel_scrambled)
+
+        #scramble the green channel
+        for s in range(1, S_g+1):
+            
+            for r in range(0, rows):
+
+                for c in range(0, cols):
+
+                    #get the new coordinate for the green channel
+                    new_row_coordinate = ((a1 * r) + (a2 * c)) % rows
+                    new_col_coordinate_g = ((a3_g * r) + (a4_g * c)) % cols
+
+                    #place the code value for each channel at the new coordinate
+                    green_channel_scrambled[new_row_coordinate, new_col_coordinate_g] = green_channel_copy[r,c]
+
+            #pass along most recent scrambles for the next scrambles
+            green_channel_copy = np.copy(green_channel_scrambled)
+
+        #scramble the blue channel
+        for s in range(1, S_b+1):
+            
+            for r in range(0, rows):
+
+                for c in range(0, cols):
+
+                    #get the new coordinate for the blue channel
+                    new_row_coordinate = ((a1 * r) + (a2 * c)) % rows
+                    new_col_coordinate_b = ((a3_b * r) + (a4_b * c)) % cols
+
+                    #place the code value for each channel at the new coordinate
+                    blue_channel_scrambled[new_row_coordinate, new_col_coordinate_b] = blue_channel_copy[r,c]
 
             #pass along most recent scrambles for the next scrambles
             blue_channel_copy = np.copy(blue_channel_scrambled)
-            green_channel_copy = np.copy(green_channel_scrambled)
-            red_channel_copy = np.copy(red_channel_scrambled)
 
-        #TODO: scheme for easy channel switching and selection
+        #assemble the channels into a list to be merged
         reconstruction_list = [red_channel_scrambled, green_channel_scrambled, blue_channel_scrambled]
         
         #bring the channels together
