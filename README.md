@@ -11,6 +11,7 @@ This is setup to be a Python module.  Clone this repository in your PYTHONPATH d
 * color
 * progressbar
 * nero
+* networkx
 
 # CONTACT INFO #
 Gregory Nero - gmn8357@rit.edu
