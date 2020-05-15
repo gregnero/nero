@@ -3,3 +3,4 @@ from .gameOfLife import gameOfLife
 from .doodle import doodle
 from .scramble import scramble
 from .SIR import SIR
+from .bessel import bessel
